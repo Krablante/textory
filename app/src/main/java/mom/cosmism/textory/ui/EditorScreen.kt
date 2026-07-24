@@ -954,6 +954,7 @@ internal fun ComparisonDock(
     var dragOffsetY by remember(change.id) { mutableFloatStateOf(0f) }
     val dismissThreshold = with(LocalDensity.current) { 72.dp.toPx() }
     val layout = comparisonDockLayout(change)
+    val replacementMode = replacementPresentation(change)
     Surface(
         color = TextoryPalette.Surface,
         shape = RoundedCornerShape(20.dp),
@@ -1029,14 +1030,14 @@ internal fun ComparisonDock(
                         enabled = position < total - 1,
                         onClick = onNext,
                     )
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(4.dp))
                     Box(
                         modifier = Modifier
                             .width(1.dp)
                             .height(24.dp)
                             .background(TextoryPalette.Border),
                     )
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(4.dp))
                     DockHeaderButton(
                         label = "×",
                         description = "Закрыть сравнение",
@@ -1058,6 +1059,8 @@ internal fun ComparisonDock(
                             containerColor = TextoryPalette.GreenBlock,
                             detailColor = TextoryPalette.GreenDetail,
                             fontSizeSp = editorFontSizeSp,
+                            maxChars = 300,
+                            maxLines = 8,
                         )
                     }
                 }
@@ -1074,37 +1077,74 @@ internal fun ComparisonDock(
                             containerColor = TextoryPalette.RedHighlight,
                             detailColor = TextoryPalette.RedDetail,
                             fontSizeSp = editorFontSizeSp,
+                            maxChars = 300,
+                            maxLines = 8,
                         )
                     }
                 }
                 ComparisonDockLayout.REPLACEMENT -> {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        ComparisonBlock(
-                            label = currentLabel,
-                            text = change.currentText,
-                            counterpart = change.previousText,
-                            emptyText = "Фрагмент удалён",
-                            containerColor = TextoryPalette.GreenBlock,
-                            detailColor = TextoryPalette.GreenDetail,
-                            fontSizeSp = editorFontSizeSp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        ComparisonBlock(
-                            label = previousLabel,
-                            text = change.previousText,
-                            counterpart = change.currentText,
-                            emptyText = "Фрагмента не было",
-                            containerColor = TextoryPalette.RedHighlight,
-                            detailColor = TextoryPalette.RedDetail,
-                            fontSizeSp = editorFontSizeSp,
-                            modifier = Modifier.weight(1f),
-                        )
+                    val contentModifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                    if (replacementMode == ReplacementPresentation.SIDE_BY_SIDE) {
+                        Row(
+                            modifier = contentModifier,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            CompactComparisonBlock(
+                                label = currentLabel,
+                                text = change.currentText,
+                                counterpart = change.previousText,
+                                containerColor = TextoryPalette.GreenBlock,
+                                detailColor = TextoryPalette.GreenDetail,
+                                fontSizeSp = editorFontSizeSp,
+                                maxChars = 140,
+                                maxLines = 7,
+                                emptyText = "Фрагмент удалён",
+                                modifier = Modifier.weight(1f),
+                            )
+                            CompactComparisonBlock(
+                                label = previousLabel,
+                                text = change.previousText,
+                                counterpart = change.currentText,
+                                containerColor = TextoryPalette.RedHighlight,
+                                detailColor = TextoryPalette.RedDetail,
+                                fontSizeSp = editorFontSizeSp,
+                                maxChars = 140,
+                                maxLines = 7,
+                                emptyText = "Фрагмента не было",
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    } else {
+                        Column(
+                            modifier = contentModifier,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            CompactComparisonBlock(
+                                label = currentLabel,
+                                text = change.currentText,
+                                counterpart = change.previousText,
+                                containerColor = TextoryPalette.GreenBlock,
+                                detailColor = TextoryPalette.GreenDetail,
+                                fontSizeSp = editorFontSizeSp,
+                                maxChars = 220,
+                                maxLines = 5,
+                                emptyText = "Фрагмент удалён",
+                            )
+                            CompactComparisonBlock(
+                                label = previousLabel,
+                                text = change.previousText,
+                                counterpart = change.currentText,
+                                containerColor = TextoryPalette.RedHighlight,
+                                detailColor = TextoryPalette.RedDetail,
+                                fontSizeSp = editorFontSizeSp,
+                                maxChars = 220,
+                                maxLines = 5,
+                                emptyText = "Фрагмента не было",
+                            )
+                        }
                     }
                 }
             }
@@ -1144,100 +1184,57 @@ private fun CompactComparisonBlock(
     containerColor: Color,
     detailColor: Color,
     fontSizeSp: Float,
+    maxChars: Int,
+    maxLines: Int,
+    emptyText: String = "",
     modifier: Modifier = Modifier,
 ) {
+    val excerpt = remember(text, counterpart, maxChars) {
+        comparisonExcerpt(text, counterpart, maxChars)
+    }
+    val displayFontSizeSp = comparisonDockFontSize(fontSizeSp, text.length, maxChars)
     Surface(
         color = containerColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.Top,
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = label,
                 color = TextoryPalette.InkMuted,
-                fontSize = (fontSizeSp - 3f).coerceAtLeast(10f).sp,
+                fontSize = 10.sp,
+                lineHeight = 11.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 1.dp),
             )
-            Spacer(Modifier.width(8.dp))
             Text(
-                text = detailedDifference(text, counterpart, detailColor),
-                color = TextoryPalette.Ink,
-                fontSize = fontSizeSp.sp,
-                lineHeight = (fontSizeSp * 1.45f).sp,
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(max = 120.dp)
-                    .verticalScroll(rememberScrollState()),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ComparisonBlock(
-    label: String,
-    text: String,
-    counterpart: String,
-    emptyText: String,
-    containerColor: Color,
-    detailColor: Color,
-    fontSizeSp: Float,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            color = TextoryPalette.InkMuted,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(start = 2.dp, bottom = 4.dp),
-        )
-        Surface(
-            color = containerColor,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                text = if (text.isEmpty()) AnnotatedString(emptyText)
-                else detailedDifference(text, counterpart, detailColor),
+                text = if (text.isEmpty()) AnnotatedString(emptyText) else detailedDifference(excerpt, detailColor),
                 color = if (text.isEmpty()) TextoryPalette.InkMuted else TextoryPalette.Ink,
                 fontStyle = if (text.isEmpty()) FontStyle.Italic else FontStyle.Normal,
-                fontSize = fontSizeSp.sp,
-                lineHeight = (fontSizeSp * 1.45f).sp,
-                modifier = Modifier
-                    .heightIn(max = 120.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                fontSize = displayFontSizeSp.sp,
+                lineHeight = (displayFontSizeSp * 1.24f).sp,
+                maxLines = maxLines,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
-private fun detailedDifference(text: String, counterpart: String, detailColor: Color): AnnotatedString {
-    if (counterpart.isEmpty()) {
-        return buildAnnotatedString {
-            append(text)
-            if (text.isNotEmpty()) addStyle(SpanStyle(background = detailColor), 0, text.length)
+private fun detailedDifference(excerpt: ComparisonExcerpt, detailColor: Color): AnnotatedString =
+    buildAnnotatedString {
+        append(excerpt.text)
+        excerpt.highlights.forEach { range ->
+            addStyle(SpanStyle(background = detailColor), range.start, range.endExclusive)
         }
     }
-    var prefix = 0
-    val maxPrefix = minOf(text.length, counterpart.length)
-    while (prefix < maxPrefix && text[prefix] == counterpart[prefix]) prefix++
 
-    var suffix = 0
-    val maxSuffix = minOf(text.length - prefix, counterpart.length - prefix)
-    while (
-        suffix < maxSuffix &&
-        text[text.lastIndex - suffix] == counterpart[counterpart.lastIndex - suffix]
-    ) suffix++
-
-    return buildAnnotatedString {
-        append(text)
-        val end = text.length - suffix
-        if (prefix < end) addStyle(SpanStyle(background = detailColor), prefix, end)
+internal fun comparisonDockFontSize(preferredSp: Float, sourceLength: Int, maxChars: Int): Float {
+    val base = preferredSp.coerceIn(12f, 15f)
+    return when {
+        sourceLength > maxChars * 2 -> (base - 2f).coerceAtLeast(11f)
+        sourceLength > maxChars -> (base - 1f).coerceAtLeast(11.5f)
+        else -> base
     }
 }
