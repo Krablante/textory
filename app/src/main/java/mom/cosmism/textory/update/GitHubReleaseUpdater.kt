@@ -3,6 +3,8 @@ package mom.cosmism.textory.update
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import java.io.File
@@ -60,6 +62,14 @@ internal class GitHubReleaseUpdater(
     private val context: Context,
     private val latestReleaseUrl: String = LATEST_RELEASE_URL,
 ) {
+    fun hasValidatedInternet(): Boolean {
+        val connectivity = context.getSystemService(ConnectivityManager::class.java) ?: return false
+        val network = connectivity.activeNetwork ?: return false
+        val capabilities = connectivity.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
     suspend fun fetchLatestRelease(): GitHubRelease = withContext(Dispatchers.IO) {
         val connection = openConnection(latestReleaseUrl, GITHUB_ACCEPT)
         try {

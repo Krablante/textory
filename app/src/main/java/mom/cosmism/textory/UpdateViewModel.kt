@@ -36,24 +36,42 @@ internal class UpdateViewModel(application: Application) : AndroidViewModel(appl
     private val _state = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
     val state: StateFlow<UpdateUiState> = _state.asStateFlow()
     private var operation: Job? = null
+    private var activeCheckIsSilent = false
+
+    init {
+        if (updater.hasValidatedInternet()) startUpdateCheck(silent = true)
+    }
 
     fun checkForUpdates() {
-        if (operation?.isActive == true) return
-        _state.value = UpdateUiState.Checking
+        if (operation?.isActive == true) {
+            if (activeCheckIsSilent) {
+                activeCheckIsSilent = false
+                _state.value = UpdateUiState.Checking
+            }
+            return
+        }
+        startUpdateCheck(silent = false)
+    }
+
+    private fun startUpdateCheck(silent: Boolean) {
+        activeCheckIsSilent = silent
+        if (!silent) _state.value = UpdateUiState.Checking
         operation = viewModelScope.launch {
             try {
                 val release = updater.fetchLatestRelease()
                 val current = SemanticVersion.parse(BuildConfig.VERSION_NAME)
                     ?: throw UpdateException("Некорректная версия установленного приложения")
-                _state.value = if (release.version > current) {
-                    UpdateUiState.Available(release)
-                } else {
-                    UpdateUiState.Current(current.toString())
-                }
+                operation = null
+                _state.value = resolveUpdateCheckState(release, current, activeCheckIsSilent)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                _state.value = UpdateUiState.Failed(error.userMessage("Не удалось проверить обновления"))
+                operation = null
+                _state.value = if (activeCheckIsSilent) {
+                    UpdateUiState.Idle
+                } else {
+                    UpdateUiState.Failed(error.userMessage("Не удалось проверить обновления"))
+                }
             }
         }
     }
@@ -61,16 +79,19 @@ internal class UpdateViewModel(application: Application) : AndroidViewModel(appl
     fun downloadUpdate() {
         val release = (_state.value as? UpdateUiState.Available)?.release ?: return
         if (operation?.isActive == true) return
+        activeCheckIsSilent = false
         _state.value = UpdateUiState.Downloading(release, progress = 0)
         operation = viewModelScope.launch {
             try {
                 val apkFile = updater.downloadAndVerify(release) { progress ->
                     _state.value = UpdateUiState.Downloading(release, progress)
                 }
+                operation = null
                 _state.value = UpdateUiState.Ready(release, apkFile)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                operation = null
                 _state.value = UpdateUiState.Failed(error.userMessage("Не удалось скачать обновление"))
             }
         }
@@ -104,4 +125,14 @@ internal class UpdateViewModel(application: Application) : AndroidViewModel(appl
 
     private fun Exception.userMessage(fallback: String): String =
         (this as? UpdateException)?.message?.takeIf(String::isNotBlank) ?: fallback
+}
+
+internal fun resolveUpdateCheckState(
+    release: GitHubRelease,
+    current: SemanticVersion,
+    silent: Boolean,
+): UpdateUiState = when {
+    release.version > current -> UpdateUiState.Available(release)
+    silent -> UpdateUiState.Idle
+    else -> UpdateUiState.Current(current.toString())
 }

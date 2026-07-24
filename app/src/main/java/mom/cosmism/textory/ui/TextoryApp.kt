@@ -107,10 +107,6 @@ internal fun TextoryApp(
                 onDiscardChanges(id)
             },
             onCheckForUpdates = onCheckForUpdates,
-            onDownloadUpdate = onDownloadUpdate,
-            onInstallUpdate = onInstallUpdate,
-            onCancelUpdate = onCancelUpdate,
-            onDismissUpdate = onDismissUpdate,
         )
 
         AppDestination.EDITOR -> EditorScreen(
@@ -137,4 +133,12 @@ internal fun TextoryApp(
             },
         )
     }
+
+    UpdateDialog(
+        state = updateState,
+        onDownload = onDownloadUpdate,
+        onInstall = onInstallUpdate,
+        onCancel = onCancelUpdate,
+        onDismiss = onDismissUpdate,
+    )
 }

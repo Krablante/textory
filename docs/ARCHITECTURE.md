@@ -38,7 +38,9 @@ List blocks в `MarkdownPreview` используют естественную �
 
 Self-update изолирован от редактора и project repository. `UpdateViewModel` владеет коротким UI-state machine, `GitHubReleaseUpdater` выполняет сетевую и криптографическую часть, а `UpdateInstaller` только передаёт уже проверенный файл системному Android installer.
 
-Поток запускается исключительно действием пользователя:
+`UpdateViewModel.init` запускает один silent check при создании новой app session. Перед сетью `ConnectivityManager` требует у active network обе capability: `INTERNET` и `VALIDATED`. Нет сети, текущая версия и любая ошибка оставляют `UpdateUiState.Idle`; только более новый release создаёт `Available`. Если пользователь запускает ручную проверку во время этого GET, существующий запрос повышается до видимого `Checking` без второго сетевого обращения. Dialog расположен на уровне `TextoryApp`, поэтому не зависит от текущего destination.
+
+Дальнейший поток общий для автоматической и ручной проверки:
 
 1. `GET /repos/Krablante/textory/releases/latest` получает последний опубликованный stable release; draft и prerelease не участвуют.
 2. Из assets выбирается production APK с HTTPS `browser_download_url`. Никакой GitHub token в приложении не хранится.
@@ -46,7 +48,7 @@ Self-update изолирован от редактора и project repository. 
 4. Android `PackageManager` подтверждает package `mom.cosmism.textory`, точное совпадение release tag и `versionName`, рост `versionCode` и SHA-256 production-сертификата.
 5. `FileProvider` выдаёт installer одноразовый read URI. На Android 8+ пользователь при необходимости явно разрешает этому источнику установку APK.
 
-Updater не имеет фонового worker, таймера, собственной базы, широкого storage-доступа или альтернативного канала обновлений. Частично загруженные и старые APK очищаются из приватного cache при следующей попытке.
+Updater не имеет фонового worker, таймера, retry-loop, собственной базы, широкого storage-доступа или альтернативного канала обновлений. Он выполняет один metadata GET на cold app session и никогда автоматически не скачивает APK. Частично загруженные и старые APK очищаются из приватного cache при следующей попытке.
 
 ## Адаптивное сравнение
 

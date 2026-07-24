@@ -57,10 +57,6 @@ internal fun HomeScreen(
     onDeleteProject: (String) -> Unit,
     onDiscardChanges: (String) -> Unit,
     onCheckForUpdates: () -> Unit,
-    onDownloadUpdate: () -> Unit,
-    onInstallUpdate: () -> Unit,
-    onCancelUpdate: () -> Unit,
-    onDismissUpdate: () -> Unit,
 ) {
     var appMenuExpanded by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<ProjectSummary?>(null) }
@@ -289,13 +285,6 @@ internal fun HomeScreen(
         )
     }
 
-    UpdateDialog(
-        state = updateState,
-        onDownload = onDownloadUpdate,
-        onInstall = onInstallUpdate,
-        onCancel = onCancelUpdate,
-        onDismiss = onDismissUpdate,
-    )
 }
 
 @Composable
