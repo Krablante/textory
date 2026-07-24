@@ -418,7 +418,7 @@ private fun MarkdownBlockView(
                     Modifier
                         .width(3.dp)
                         .height(28.dp)
-                        .background(TextoryPalette.GreenHighlight, RoundedCornerShape(2.dp)),
+                        .background(TextoryPalette.AccentHighlight, RoundedCornerShape(2.dp)),
                 )
                 Box(modifier = Modifier.padding(start = 12.dp)) { content() }
             }
@@ -699,7 +699,7 @@ private object MarkdownParser {
                             close,
                             SpanStyle(
                                 fontFamily = FontFamily.Monospace,
-                                color = colors.green,
+                                color = colors.accent,
                             ),
                         )
                         index = close + 1
@@ -716,7 +716,7 @@ private object MarkdownParser {
                             index + 1,
                             labelEnd,
                             SpanStyle(
-                                color = colors.green,
+                                color = colors.accent,
                                 textDecoration = TextDecoration.Underline,
                             ),
                             url = content.substring(labelEnd + 2, linkEnd),
@@ -799,7 +799,7 @@ private fun markdownEditorStyleRanges(
     editorCode.findAll(source).forEach { match ->
         add(
             EditorStyleRange(
-                SpanStyle(fontFamily = FontFamily.Monospace, color = colors.green),
+                SpanStyle(fontFamily = FontFamily.Monospace, color = colors.accent),
                 match.groups[1]!!.range.first,
                 match.groups[1]!!.range.last + 1,
             ),
@@ -808,7 +808,7 @@ private fun markdownEditorStyleRanges(
     editorLink.findAll(source).forEach { match ->
         add(
             EditorStyleRange(
-                SpanStyle(color = colors.green, textDecoration = TextDecoration.Underline),
+                SpanStyle(color = colors.accent, textDecoration = TextDecoration.Underline),
                 match.groups[1]!!.range.first,
                 match.groups[1]!!.range.last + 1,
             ),
@@ -822,7 +822,7 @@ private fun markdownEditorStyleRanges(
         )
     }
     editorLinePrefix.findAll(source).forEach { match ->
-        add(EditorStyleRange(SpanStyle(color = colors.green), match.range.first, match.range.last + 1))
+        add(EditorStyleRange(SpanStyle(color = colors.accent), match.range.first, match.range.last + 1))
     }
 }
 

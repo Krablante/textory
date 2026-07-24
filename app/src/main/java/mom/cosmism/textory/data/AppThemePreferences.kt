@@ -3,9 +3,13 @@ package mom.cosmism.textory.data
 import android.content.Context
 import androidx.core.content.edit
 
-enum class AppTheme(val storageValue: String) {
-    LIGHT("light"),
-    DARK("dark"),
+enum class AppTheme(
+    val storageValue: String,
+    val isDark: Boolean,
+) {
+    LIGHT("light", isDark = false),
+    SEPIA("sepia", isDark = false),
+    DARK("dark", isDark = true),
     ;
 
     companion object {

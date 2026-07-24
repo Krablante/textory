@@ -188,7 +188,7 @@ fun VersionHistoryScreen(
             if (text == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
-                        color = TextoryPalette.Green,
+                        color = TextoryPalette.Accent,
                         strokeWidth = 2.dp,
                         modifier = Modifier.size(28.dp),
                     )
@@ -236,7 +236,7 @@ private fun VersionComparisonBar(
     ) {
         Text(
             text = versionComparisonStatus(isCurrent, enabled, isLoading, changeCount),
-            color = if (enabled && changeCount > 0) TextoryPalette.Green else TextoryPalette.InkMuted,
+            color = if (enabled && changeCount > 0) TextoryPalette.Accent else TextoryPalette.InkMuted,
             fontSize = 12.sp,
             fontWeight = if (enabled && changeCount > 0) FontWeight.Medium else FontWeight.Normal,
             modifier = Modifier.weight(1f),
@@ -244,9 +244,9 @@ private fun VersionComparisonBar(
         if (!isCurrent) {
             val buttonText = if (enabled) "Скрыть отличия" else "Показать отличия"
             Surface(
-                color = if (enabled) TextoryPalette.GreenBlock else TextoryPalette.Surface,
+                color = if (enabled) TextoryPalette.AccentHighlight else TextoryPalette.Surface,
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, if (enabled) TextoryPalette.Green else TextoryPalette.Border),
+                border = BorderStroke(1.dp, if (enabled) TextoryPalette.Accent else TextoryPalette.Border),
                 modifier = Modifier
                     .height(36.dp)
                     .clickable(onClick = onToggle)
@@ -258,7 +258,7 @@ private fun VersionComparisonBar(
                 ) {
                     Text(
                         text = buttonText,
-                        color = if (enabled) TextoryPalette.Green else TextoryPalette.Ink,
+                        color = if (enabled) TextoryPalette.Accent else TextoryPalette.Ink,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
@@ -309,7 +309,7 @@ private fun VersionTopBar(
         TextButton(onClick = onCopy, enabled = textAvailable) {
             Text(
                 text = "Копировать",
-                color = if (textAvailable) TextoryPalette.Green else TextoryPalette.InkMuted,
+                color = if (textAvailable) TextoryPalette.Accent else TextoryPalette.InkMuted,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
             )
@@ -373,11 +373,11 @@ private fun VersionSwitcher(
                 itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
                     val selected = index == selectedIndex
                     Surface(
-                        color = if (selected) TextoryPalette.GreenBlock else TextoryPalette.Surface,
+                        color = if (selected) TextoryPalette.AccentHighlight else TextoryPalette.Surface,
                         shape = RoundedCornerShape(14.dp),
                         border = BorderStroke(
                             1.dp,
-                            if (selected) TextoryPalette.Green else TextoryPalette.Border,
+                            if (selected) TextoryPalette.Accent else TextoryPalette.Border,
                         ),
                         modifier = Modifier
                             .height(44.dp)
@@ -389,7 +389,7 @@ private fun VersionSwitcher(
                         ) {
                             Text(
                                 text = chipLabels[index],
-                                color = if (selected) TextoryPalette.Green else TextoryPalette.Ink,
+                                color = if (selected) TextoryPalette.Accent else TextoryPalette.Ink,
                                 fontSize = 14.sp,
                                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                             )
@@ -412,7 +412,7 @@ private fun VersionSwitcher(
                 TextButton(onClick = onUse, enabled = canUse) {
                     Text(
                         text = "Использовать эту версию",
-                        color = if (canUse) TextoryPalette.Green else TextoryPalette.InkMuted,
+                        color = if (canUse) TextoryPalette.Accent else TextoryPalette.InkMuted,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                     )

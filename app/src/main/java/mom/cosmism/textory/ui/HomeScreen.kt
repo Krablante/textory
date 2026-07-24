@@ -148,7 +148,7 @@ internal fun HomeScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(
-                        color = TextoryPalette.Green,
+                        color = TextoryPalette.Accent,
                         strokeWidth = 2.dp,
                         modifier = Modifier.size(28.dp),
                     )
@@ -343,14 +343,15 @@ private fun ThemeOption(
     val preview = textoryColors(theme)
     val (title, description) = when (theme) {
         AppTheme.LIGHT -> "Светлая" to "Чистая и спокойная"
+        AppTheme.SEPIA -> "Sepia Paper" to "Тёплая книжная бумага"
         AppTheme.DARK -> "Тёмная" to "Мягкая для глаз"
     }
     Surface(
-        color = if (selected) TextoryPalette.GreenHighlight else TextoryPalette.Canvas,
+        color = if (selected) TextoryPalette.AccentHighlight else TextoryPalette.Canvas,
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(
             width = 1.dp,
-            color = if (selected) TextoryPalette.Green else TextoryPalette.Border,
+            color = if (selected) TextoryPalette.Accent else TextoryPalette.Border,
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -378,7 +379,7 @@ private fun ThemeOption(
                         .padding(end = 5.dp, bottom = 4.dp)
                         .size(7.dp)
                         .clip(CircleShape)
-                        .background(preview.green)
+                        .background(preview.accent)
                         .align(Alignment.BottomEnd),
                 )
             }
@@ -433,12 +434,12 @@ private fun ProjectCard(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(TextoryPalette.GreenBlock),
+                    .background(TextoryPalette.AccentHighlight),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "MD",
-                    color = TextoryPalette.Green,
+                    color = TextoryPalette.Accent,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -466,7 +467,7 @@ private fun ProjectCard(
                             .size(5.dp)
                             .clip(CircleShape)
                             .background(
-                                if (project.hasUnsavedChanges) TextoryPalette.Green
+                                if (project.hasUnsavedChanges) TextoryPalette.Accent
                                 else TextoryPalette.Border,
                             ),
                     )
@@ -537,7 +538,7 @@ private fun HomeAction(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        color = if (primary) TextoryPalette.Green else TextoryPalette.Canvas,
+        color = if (primary) TextoryPalette.Accent else TextoryPalette.Canvas,
         shape = RoundedCornerShape(13.dp),
         border = if (primary) null else BorderStroke(1.dp, TextoryPalette.Border),
         modifier = modifier

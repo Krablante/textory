@@ -32,8 +32,8 @@ android {
         applicationId = "mom.cosmism.textory"
         minSdk = 26
         targetSdk = 37
-        versionCode = 40
-        versionName = "0.12.0"
+        versionCode = 41
+        versionName = "0.13.0"
     }
 
     buildFeatures {

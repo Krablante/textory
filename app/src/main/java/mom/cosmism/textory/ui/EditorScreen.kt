@@ -379,7 +379,7 @@ private fun EditorTopBar(
                     Modifier
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(if (hasUnsavedChanges) TextoryPalette.Green else TextoryPalette.Border),
+                        .background(if (hasUnsavedChanges) TextoryPalette.Accent else TextoryPalette.Border),
                 )
                 Text(
                     text = when {
@@ -396,7 +396,7 @@ private fun EditorTopBar(
         TopBarTextAction(
             label = if (isSaving) "Сохранение…" else "Сохранить",
             enabled = hasUnsavedChanges && !isSaving,
-            color = TextoryPalette.Green,
+            color = TextoryPalette.Accent,
             fontWeight = FontWeight.SemiBold,
             onClick = onSave,
         )
@@ -473,7 +473,7 @@ private fun EditorModeSelector(mode: EditorMode, onModeChanged: (EditorMode) -> 
             ) {
                 Text(
                     text = if (item == EditorMode.READ) "Читать" else "Править",
-                    color = if (mode == item) TextoryPalette.Green else TextoryPalette.InkMuted,
+                    color = if (mode == item) TextoryPalette.Accent else TextoryPalette.InkMuted,
                     fontSize = 13.sp,
                     fontWeight = if (mode == item) FontWeight.SemiBold else FontWeight.Normal,
                     modifier = Modifier.padding(bottom = 3.dp),
@@ -482,7 +482,7 @@ private fun EditorModeSelector(mode: EditorMode, onModeChanged: (EditorMode) -> 
                     Modifier
                         .fillMaxWidth()
                         .height(2.dp)
-                        .background(if (mode == item) TextoryPalette.Green else Color.Transparent),
+                        .background(if (mode == item) TextoryPalette.Accent else Color.Transparent),
                 )
             }
         }
@@ -610,7 +610,7 @@ private fun EditorBody(
                     lineHeight = editorLineHeightSp.sp,
                     letterSpacing = 0.sp,
                 ),
-                cursorBrush = SolidColor(TextoryPalette.Green),
+                cursorBrush = SolidColor(TextoryPalette.Accent),
                 lineLimits = TextFieldLineLimits.MultiLine(),
                 outputTransformation = outputTransformation,
                 onTextLayout = { getResult -> layoutResult = getResult() },
@@ -877,9 +877,9 @@ private fun EditorHistoryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val green = TextoryPalette.Green
+    val accent = TextoryPalette.Accent
     Surface(
-        color = TextoryPalette.GreenBlock,
+        color = TextoryPalette.AccentHighlight,
         shape = CircleShape,
         shadowElevation = 4.dp,
         modifier = modifier.size(48.dp),
@@ -900,35 +900,35 @@ private fun EditorHistoryButton(
                 val strokeWidth = 2.5.dp.toPx()
                 val right = size.width - inset
                 drawLine(
-                    color = green,
+                    color = accent,
                     start = Offset(inset, centerY),
                     end = Offset(right, centerY),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = green,
+                    color = accent,
                     start = Offset(inset, centerY),
                     end = Offset(inset + wing, centerY - wing),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = green,
+                    color = accent,
                     start = Offset(inset, centerY),
                     end = Offset(inset + wing, centerY + wing),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = green,
+                    color = accent,
                     start = Offset(right, centerY),
                     end = Offset(right - wing, centerY - wing),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = green,
+                    color = accent,
                     start = Offset(right, centerY),
                     end = Offset(right - wing, centerY + wing),
                     strokeWidth = strokeWidth,

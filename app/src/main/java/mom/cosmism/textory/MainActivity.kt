@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
             var appTheme by remember { mutableStateOf(themePreferences.load()) }
             SideEffect {
                 WindowCompat.getInsetsController(window, window.decorView).apply {
-                    val lightSystemBars = appTheme == AppTheme.LIGHT
+                    val lightSystemBars = !appTheme.isDark
                     isAppearanceLightStatusBars = lightSystemBars
                     isAppearanceLightNavigationBars = lightSystemBars
                 }

@@ -128,7 +128,7 @@ private fun ProgressDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CircularProgressIndicator(
-                    color = TextoryPalette.Green,
+                    color = TextoryPalette.Accent,
                     strokeWidth = 2.dp,
                 )
                 Text(status, modifier = Modifier.padding(vertical = 8.dp))
