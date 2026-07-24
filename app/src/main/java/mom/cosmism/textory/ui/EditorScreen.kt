@@ -937,7 +937,7 @@ private fun EditorHistoryButton(
 }
 
 @Composable
-private fun ComparisonDock(
+internal fun ComparisonDock(
     change: TextChange,
     editorFontSizeSp: Float,
     position: Int,
@@ -946,6 +946,10 @@ private fun ComparisonDock(
     onNext: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    currentLabel: String = "Сейчас",
+    previousLabel: String = "Было",
+    additionDescription: String = "добавлено",
+    deletionDescription: String = "удалено",
 ) {
     var dragOffsetY by remember(change.id) { mutableFloatStateOf(0f) }
     val dismissThreshold = with(LocalDensity.current) { 72.dp.toPx() }
@@ -1001,8 +1005,8 @@ private fun ComparisonDock(
                             text = buildString {
                                 append("${position + 1} из $total")
                                 when (layout) {
-                                    ComparisonDockLayout.ADDITION -> append(" · добавлено")
-                                    ComparisonDockLayout.DELETION -> append(" · удалено")
+                                    ComparisonDockLayout.ADDITION -> append(" · $additionDescription")
+                                    ComparisonDockLayout.DELETION -> append(" · $deletionDescription")
                                     ComparisonDockLayout.REPLACEMENT -> Unit
                                 }
                             },
@@ -1048,7 +1052,7 @@ private fun ComparisonDock(
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         CompactComparisonBlock(
-                            label = "Сейчас",
+                            label = currentLabel,
                             text = change.currentText,
                             counterpart = change.previousText,
                             containerColor = TextoryPalette.GreenBlock,
@@ -1064,7 +1068,7 @@ private fun ComparisonDock(
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         CompactComparisonBlock(
-                            label = "Было",
+                            label = previousLabel,
                             text = change.previousText,
                             counterpart = change.currentText,
                             containerColor = TextoryPalette.RedHighlight,
@@ -1082,7 +1086,7 @@ private fun ComparisonDock(
                         verticalAlignment = Alignment.Top,
                     ) {
                         ComparisonBlock(
-                            label = "Сейчас",
+                            label = currentLabel,
                             text = change.currentText,
                             counterpart = change.previousText,
                             emptyText = "Фрагмент удалён",
@@ -1092,7 +1096,7 @@ private fun ComparisonDock(
                             modifier = Modifier.weight(1f),
                         )
                         ComparisonBlock(
-                            label = "Было",
+                            label = previousLabel,
                             text = change.previousText,
                             counterpart = change.currentText,
                             emptyText = "Фрагмента не было",

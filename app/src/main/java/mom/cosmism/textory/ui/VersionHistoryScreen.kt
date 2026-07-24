@@ -36,8 +36,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,9 +52,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import mom.cosmism.textory.CURRENT_VERSION_ID
 import mom.cosmism.textory.VersionHistoryUiState
 import mom.cosmism.textory.VersionItem
+import mom.cosmism.textory.diff.AdaptiveDiffEngine
+import mom.cosmism.textory.diff.DiffSnapshot
+import mom.cosmism.textory.diff.TextChange
 import mom.cosmism.textory.ui.theme.TextoryPalette
 import java.time.Instant
 import java.time.LocalDate
@@ -70,9 +81,45 @@ fun VersionHistoryScreen(
     val pagerState = rememberPagerState(initialPage = state.selectedIndex) { state.items.size }
     val selectedItem = state.items.getOrNull(pagerState.currentPage) ?: state.selectedItem
     val selectedText = selectedItem?.let { state.texts[it.id] }
+    val currentDraftText = state.texts[CURRENT_VERSION_ID]
+    var showDifferences by rememberSaveable { mutableStateOf(true) }
+    var selectedChange by remember { mutableStateOf<TextChange?>(null) }
+    val comparisonSnapshot by produceState<DiffSnapshot?>(
+        initialValue = null,
+        selectedItem?.id,
+        selectedText,
+        currentDraftText,
+        showDifferences,
+    ) {
+        value = null
+        value = when {
+            selectedItem == null || selectedText == null -> null
+            selectedItem.isCurrent || !showDifferences || currentDraftText == null -> {
+                DiffSnapshot(selectedText, emptyList())
+            }
+            else -> withContext(Dispatchers.Default) {
+                calculateHistoricalComparison(currentDraftText, selectedText)
+            }
+        }
+    }
+    val visibleChanges = comparisonSnapshot
+        ?.takeIf { it.sourceText == selectedText && showDifferences && !selectedItem.isCurrent }
+        ?.changes
+        .orEmpty()
+    val selectedChangeIndex = selectedChange?.let { change ->
+        visibleChanges.indexOfFirst { it.id == change.id }
+    } ?: -1
 
     LaunchedEffect(pagerState.settledPage, state.items.size) {
         if (state.items.isNotEmpty()) onSelectVersion(pagerState.settledPage)
+    }
+    LaunchedEffect(selectedItem?.id, showDifferences) {
+        selectedChange = null
+    }
+    LaunchedEffect(visibleChanges) {
+        if (selectedChange != null && visibleChanges.none { it.id == selectedChange?.id }) {
+            selectedChange = null
+        }
     }
 
     Scaffold(
@@ -94,7 +141,30 @@ fun VersionHistoryScreen(
             )
         },
         bottomBar = {
-            VersionSwitcher(
+            selectedChange?.let { change ->
+                ComparisonDock(
+                    change = change,
+                    editorFontSizeSp = fontSizeSp,
+                    position = selectedChangeIndex.coerceAtLeast(0),
+                    total = visibleChanges.size.coerceAtLeast(1),
+                    onPrevious = {
+                        if (selectedChangeIndex > 0) selectedChange = visibleChanges[selectedChangeIndex - 1]
+                    },
+                    onNext = {
+                        if (selectedChangeIndex in 0 until visibleChanges.lastIndex) {
+                            selectedChange = visibleChanges[selectedChangeIndex + 1]
+                        }
+                    },
+                    onDismiss = { selectedChange = null },
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    currentLabel = "В версии",
+                    previousLabel = "В черновике",
+                    additionDescription = "только в версии",
+                    deletionDescription = "только в черновике",
+                )
+            } ?: VersionSwitcher(
                 items = state.items,
                 selectedIndex = pagerState.currentPage,
                 canUse = selectedItem?.isCurrent == false && selectedText != null,
@@ -125,18 +195,72 @@ fun VersionHistoryScreen(
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    Text(
-                        text = "Только просмотр",
-                        color = TextoryPalette.InkMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(start = 18.dp, top = 10.dp),
+                    VersionComparisonBar(
+                        isCurrent = item.isCurrent,
+                        enabled = showDifferences,
+                        isLoading = !item.isCurrent && showDifferences &&
+                            page == pagerState.currentPage && comparisonSnapshot?.sourceText != text,
+                        changeCount = if (page == pagerState.currentPage) visibleChanges.size else 0,
+                        onToggle = {
+                            selectedChange = null
+                            showDifferences = !showDifferences
+                        },
                     )
                     MarkdownPreview(
                         markdown = text,
-                        changes = emptyList(),
+                        changes = if (page == pagerState.currentPage) visibleChanges else emptyList(),
                         fontSizeSp = fontSizeSp,
-                        onChangeTapped = {},
+                        onChangeTapped = { selectedChange = it },
                         modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VersionComparisonBar(
+    isCurrent: Boolean,
+    enabled: Boolean,
+    isLoading: Boolean,
+    changeCount: Int,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 18.dp, top = 10.dp, end = 14.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = versionComparisonStatus(isCurrent, enabled, isLoading, changeCount),
+            color = if (enabled && changeCount > 0) TextoryPalette.Green else TextoryPalette.InkMuted,
+            fontSize = 12.sp,
+            fontWeight = if (enabled && changeCount > 0) FontWeight.Medium else FontWeight.Normal,
+            modifier = Modifier.weight(1f),
+        )
+        if (!isCurrent) {
+            val buttonText = if (enabled) "Скрыть отличия" else "Показать отличия"
+            Surface(
+                color = if (enabled) TextoryPalette.GreenBlock else TextoryPalette.Surface,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, if (enabled) TextoryPalette.Green else TextoryPalette.Border),
+                modifier = Modifier
+                    .height(36.dp)
+                    .clickable(onClick = onToggle)
+                    .semantics { contentDescription = buttonText },
+            ) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = buttonText,
+                        color = if (enabled) TextoryPalette.Green else TextoryPalette.Ink,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
                     )
                 }
             }
@@ -333,6 +457,29 @@ private fun formatVersionSubtitle(item: VersionItem): String {
         else -> "${dateTime.dayOfMonth} ${MONTHS[dateTime.monthValue - 1]}"
     }
     return "$day, ${dateTime.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+}
+
+internal fun calculateHistoricalComparison(currentDraft: String, selectedVersion: String): DiffSnapshot =
+    AdaptiveDiffEngine.calculate(previous = currentDraft, current = selectedVersion)
+
+internal fun versionComparisonStatus(
+    isCurrent: Boolean,
+    enabled: Boolean,
+    isLoading: Boolean,
+    changeCount: Int,
+): String = when {
+    isCurrent -> "Текущий черновик"
+    !enabled -> "Отличия скрыты"
+    isLoading -> "Сравниваем с черновиком…"
+    changeCount == 0 -> "Совпадает с черновиком"
+    else -> "$changeCount ${differenceWord(changeCount)} с черновиком"
+}
+
+private fun differenceWord(count: Int): String = when {
+    count % 100 in 11..14 -> "отличий"
+    count % 10 == 1 -> "отличие"
+    count % 10 in 2..4 -> "отличия"
+    else -> "отличий"
 }
 
 private val MONTHS = listOf(
