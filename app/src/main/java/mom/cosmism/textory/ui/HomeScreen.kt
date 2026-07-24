@@ -41,12 +41,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mom.cosmism.textory.ProjectCatalogUiState
+import mom.cosmism.textory.UpdateUiState
 import mom.cosmism.textory.data.ProjectSummary
 import mom.cosmism.textory.ui.theme.TextoryPalette
 
 @Composable
-fun HomeScreen(
+internal fun HomeScreen(
     catalog: ProjectCatalogUiState,
+    updateState: UpdateUiState,
     onOpenProject: (String) -> Unit,
     onNewProject: () -> Unit,
     onImportDocument: () -> Unit,
@@ -54,7 +56,13 @@ fun HomeScreen(
     onRenameProject: (String, String) -> Unit,
     onDeleteProject: (String) -> Unit,
     onDiscardChanges: (String) -> Unit,
+    onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: () -> Unit,
+    onInstallUpdate: () -> Unit,
+    onCancelUpdate: () -> Unit,
+    onDismissUpdate: () -> Unit,
 ) {
+    var appMenuExpanded by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<ProjectSummary?>(null) }
     var renameValue by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<ProjectSummary?>(null) }
@@ -71,7 +79,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .padding(horizontal = 16.dp),
+                    .padding(start = 16.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -90,6 +98,37 @@ fun HomeScreen(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                 )
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .clickable { appMenuExpanded = true }
+                            .semantics { contentDescription = "Меню Textory" },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "⋮",
+                            color = TextoryPalette.Ink,
+                            fontSize = 23.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = appMenuExpanded,
+                        onDismissRequest = { appMenuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Проверить обновления") },
+                            enabled = updateState !is UpdateUiState.Checking &&
+                                updateState !is UpdateUiState.Downloading,
+                            onClick = {
+                                appMenuExpanded = false
+                                onCheckForUpdates()
+                            },
+                        )
+                    }
+                }
             }
 
             when {
@@ -249,6 +288,14 @@ fun HomeScreen(
             containerColor = TextoryPalette.Surface,
         )
     }
+
+    UpdateDialog(
+        state = updateState,
+        onDownload = onDownloadUpdate,
+        onInstall = onInstallUpdate,
+        onCancel = onCancelUpdate,
+        onDismiss = onDismissUpdate,
+    )
 }
 
 @Composable

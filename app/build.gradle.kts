@@ -32,12 +32,13 @@ android {
         applicationId = "mom.cosmism.textory"
         minSdk = 26
         targetSdk = 37
-        versionCode = 35
-        versionName = "0.10.4"
+        versionCode = 36
+        versionName = "0.11.0"
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     signingConfigs {
@@ -66,12 +67,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-        }
-        create("releaseLike") {
-            initWith(getByName("release"))
-            signingConfig = signingConfigs.getByName("debug")
-            matchingFallbacks += "release"
-            versionNameSuffix = "-local"
         }
     }
 
@@ -109,4 +104,5 @@ dependencies {
 
     implementation("io.github.java-diff-utils:java-diff-utils:4.17")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

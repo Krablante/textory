@@ -10,16 +10,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import mom.cosmism.textory.EditorUiState
 import mom.cosmism.textory.ProjectCatalogUiState
+import mom.cosmism.textory.UpdateUiState
 import mom.cosmism.textory.VersionHistoryUiState
 
 private enum class AppDestination { HOME, EDITOR, VERSIONS }
 
 @Composable
-fun TextoryApp(
+internal fun TextoryApp(
     state: EditorUiState,
     editorFontSizeSp: Float,
     catalog: ProjectCatalogUiState,
     versionHistory: VersionHistoryUiState,
+    updateState: UpdateUiState,
     onOpenProject: (String) -> Unit,
     onTextChanged: (String) -> Unit,
     onEditorFontSizeChanged: (Float) -> Unit,
@@ -30,6 +32,11 @@ fun TextoryApp(
     onRenameProject: (String, String) -> Unit,
     onDeleteProject: (String) -> Unit,
     onDiscardChanges: (String) -> Unit,
+    onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: () -> Unit,
+    onInstallUpdate: () -> Unit,
+    onCancelUpdate: () -> Unit,
+    onDismissUpdate: () -> Unit,
     onRefreshVersionHistory: () -> Unit,
     onSelectVersion: (Int) -> Unit,
     onUseSelectedVersion: () -> Unit,
@@ -78,6 +85,7 @@ fun TextoryApp(
     when (destination) {
         AppDestination.HOME -> HomeScreen(
             catalog = catalog,
+            updateState = updateState,
             onOpenProject = { id -> openProject(id, AppDestination.EDITOR) },
             onNewProject = {
                 waitForProject(AppDestination.EDITOR, editMode = true, action = onNewProject)
@@ -98,6 +106,11 @@ fun TextoryApp(
                 pendingDestination = null
                 onDiscardChanges(id)
             },
+            onCheckForUpdates = onCheckForUpdates,
+            onDownloadUpdate = onDownloadUpdate,
+            onInstallUpdate = onInstallUpdate,
+            onCancelUpdate = onCancelUpdate,
+            onDismissUpdate = onDismissUpdate,
         )
 
         AppDestination.EDITOR -> EditorScreen(

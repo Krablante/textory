@@ -34,6 +34,20 @@ List blocks в `MarkdownPreview` используют естественную �
 
 При изменении текста ViewModel немедленно обновляет видимый черновик, сбрасывает устаревшую подсветку и через 70 мс запускает `AdaptiveDiffEngine` на `Dispatchers.Default`. Результат принимается только если оба исходных текста всё ещё актуальны. Это исключает мерцание неправильных диапазонов при быстром наборе.
 
+## Обновления приложения
+
+Self-update изолирован от редактора и project repository. `UpdateViewModel` владеет коротким UI-state machine, `GitHubReleaseUpdater` выполняет сетевую и криптографическую часть, а `UpdateInstaller` только передаёт уже проверенный файл системному Android installer.
+
+Поток запускается исключительно действием пользователя:
+
+1. `GET /repos/Krablante/textory/releases/latest` получает последний опубликованный stable release; draft и prerelease не участвуют.
+2. Из assets выбирается production APK с HTTPS `browser_download_url`. Никакой GitHub token в приложении не хранится.
+3. APK скачивается в `cacheDir/updates`, ограничен `100 MiB` и сверяется с размером и `sha256:` digest GitHub.
+4. Android `PackageManager` подтверждает package `mom.cosmism.textory`, точное совпадение release tag и `versionName`, рост `versionCode` и SHA-256 production-сертификата.
+5. `FileProvider` выдаёт installer одноразовый read URI. На Android 8+ пользователь при необходимости явно разрешает этому источнику установку APK.
+
+Updater не имеет фонового worker, таймера, собственной базы, широкого storage-доступа или альтернативного канала обновлений. Частично загруженные и старые APK очищаются из приватного cache при следующей попытке.
+
 ## Адаптивное сравнение
 
 Движок идёт от структурных единиц Markdown к видимым лексическим изменениям:

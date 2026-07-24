@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream
 
 class MainActivity : ComponentActivity() {
     private val viewModel: EditorViewModel by viewModels()
+    private val updateViewModel: UpdateViewModel by viewModels()
 
     private val openDocument = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importDocument(uri)
@@ -40,12 +41,14 @@ class MainActivity : ComponentActivity() {
             val editorFontSizeSp by viewModel.editorFontSizeSp.collectAsStateWithLifecycle()
             val catalog by viewModel.projectCatalog.collectAsStateWithLifecycle()
             val versionHistory by viewModel.versionHistory.collectAsStateWithLifecycle()
+            val updateState by updateViewModel.state.collectAsStateWithLifecycle()
             TextoryTheme {
                 TextoryApp(
                     state = state,
                     editorFontSizeSp = editorFontSizeSp,
                     catalog = catalog,
                     versionHistory = versionHistory,
+                    updateState = updateState,
                     onOpenProject = viewModel::openProject,
                     onTextChanged = viewModel::onTextChanged,
                     onEditorFontSizeChanged = viewModel::setEditorFontSizeSp,
@@ -60,6 +63,11 @@ class MainActivity : ComponentActivity() {
                     onRenameProject = viewModel::renameProject,
                     onDeleteProject = viewModel::deleteProject,
                     onDiscardChanges = viewModel::discardProjectChanges,
+                    onCheckForUpdates = updateViewModel::checkForUpdates,
+                    onDownloadUpdate = updateViewModel::downloadUpdate,
+                    onInstallUpdate = updateViewModel::installUpdate,
+                    onCancelUpdate = updateViewModel::cancelOperation,
+                    onDismissUpdate = updateViewModel::dismiss,
                     onRefreshVersionHistory = viewModel::refreshVersionHistory,
                     onSelectVersion = viewModel::selectVersion,
                     onUseSelectedVersion = viewModel::useSelectedVersionAsDraft,
