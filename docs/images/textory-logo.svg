@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" role="img" aria-labelledby="title">
+  <title id="title">Textory</title>
+  <path fill="#4F7F63" d="M54 6C27.5 6 8 25.5 8 52v4c0 26.5 19.5 46 46 46s46-19.5 46-46v-4C100 25.5 80.5 6 54 6Z"/>
+  <path fill="#FFFFFF" d="M31 31h45v8H31z"/>
+  <path fill="#FFFFFF" d="M49 35h9v42h-9z"/>
+  <path fill="#FFFFFF" d="M64 55h14v7H64z"/>
+  <path fill="#FFFFFF" d="M64 70h11v7H64z"/>
+</svg>
