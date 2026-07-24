@@ -23,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,13 +43,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mom.cosmism.textory.ProjectCatalogUiState
 import mom.cosmism.textory.UpdateUiState
+import mom.cosmism.textory.data.AppTheme
 import mom.cosmism.textory.data.ProjectSummary
 import mom.cosmism.textory.ui.theme.TextoryPalette
+import mom.cosmism.textory.ui.theme.textoryColors
 
 @Composable
 internal fun HomeScreen(
     catalog: ProjectCatalogUiState,
     updateState: UpdateUiState,
+    appTheme: AppTheme,
+    onAppThemeChanged: (AppTheme) -> Unit,
     onOpenProject: (String) -> Unit,
     onNewProject: () -> Unit,
     onImportDocument: () -> Unit,
@@ -59,6 +64,7 @@ internal fun HomeScreen(
     onCheckForUpdates: () -> Unit,
 ) {
     var appMenuExpanded by remember { mutableStateOf(false) }
+    var settingsOpen by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<ProjectSummary?>(null) }
     var renameValue by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<ProjectSummary?>(null) }
@@ -114,6 +120,13 @@ internal fun HomeScreen(
                         expanded = appMenuExpanded,
                         onDismissRequest = { appMenuExpanded = false },
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("Настройки") },
+                            onClick = {
+                                appMenuExpanded = false
+                                settingsOpen = true
+                            },
+                        )
                         DropdownMenuItem(
                             text = { Text("Проверить обновления") },
                             enabled = updateState !is UpdateUiState.Checking &&
@@ -215,6 +228,40 @@ internal fun HomeScreen(
         }
     }
 
+    if (settingsOpen) {
+        AlertDialog(
+            onDismissRequest = { settingsOpen = false },
+            title = { Text("Настройки") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Оформление",
+                        color = TextoryPalette.InkMuted,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    AppTheme.entries.forEach { theme ->
+                        ThemeOption(
+                            theme = theme,
+                            selected = theme == appTheme,
+                            onClick = { onAppThemeChanged(theme) },
+                        )
+                    }
+                    Text(
+                        text = "Тема применяется сразу и сохраняется на этом устройстве.",
+                        color = TextoryPalette.InkMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { settingsOpen = false }) { Text("Готово") }
+            },
+            containerColor = TextoryPalette.Surface,
+        )
+    }
+
     renameTarget?.let { project ->
         AlertDialog(
             onDismissRequest = { renameTarget = null },
@@ -285,6 +332,76 @@ internal fun HomeScreen(
         )
     }
 
+}
+
+@Composable
+private fun ThemeOption(
+    theme: AppTheme,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val preview = textoryColors(theme)
+    val (title, description) = when (theme) {
+        AppTheme.LIGHT -> "Светлая" to "Чистая и спокойная"
+        AppTheme.DARK -> "Тёмная" to "Мягкая для глаз"
+    }
+    Surface(
+        color = if (selected) TextoryPalette.GreenHighlight else TextoryPalette.Canvas,
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) TextoryPalette.Green else TextoryPalette.Border,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 10.dp, top = 9.dp, end = 4.dp, bottom = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 48.dp, height = 34.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(preview.canvas),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 31.dp, height = 19.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(preview.surface),
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(end = 5.dp, bottom = 4.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(preview.green)
+                        .align(Alignment.BottomEnd),
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 10.dp),
+            ) {
+                Text(
+                    text = title,
+                    color = TextoryPalette.Ink,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = description,
+                    color = TextoryPalette.InkMuted,
+                    fontSize = 12.sp,
+                )
+            }
+            RadioButton(selected = selected, onClick = null)
+        }
+    }
 }
 
 @Composable
@@ -430,7 +547,7 @@ private fun HomeAction(
         Box(contentAlignment = Alignment.Center) {
             Text(
                 text = text,
-                color = if (primary) androidx.compose.ui.graphics.Color.White else TextoryPalette.Ink,
+                color = if (primary) TextoryPalette.OnAccent else TextoryPalette.Ink,
                 fontSize = 14.sp,
                 fontWeight = if (primary) FontWeight.SemiBold else FontWeight.Medium,
             )

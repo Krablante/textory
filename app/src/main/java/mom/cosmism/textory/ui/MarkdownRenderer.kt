@@ -61,6 +61,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mom.cosmism.textory.diff.TextChange
+import mom.cosmism.textory.ui.theme.LightTextoryColors
+import mom.cosmism.textory.ui.theme.TextoryColors
 import mom.cosmism.textory.ui.theme.TextoryPalette
 
 internal const val RICH_TEXT_URL_TAG = "textory-url"
@@ -113,7 +115,8 @@ fun MarkdownPreview(
     bottomOverlayPadding: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
-    val blocks = remember(markdown) { MarkdownParser.parse(markdown) }
+    val palette = TextoryPalette.current
+    val blocks = remember(markdown, palette) { MarkdownParser.parse(markdown, palette) }
     val scrollState = rememberScrollState()
     val blockKeys = remember(blocks) { blocks.map(MarkdownBlock::stableKey) }
     val blockRequesters = remember(blockKeys) { List(blocks.size) { BringIntoViewRequester() } }
@@ -352,7 +355,7 @@ private fun richClipboardDocument(
 internal fun richClipboardDocumentForMarkdown(
     markdown: String,
     fontSizeSp: Float = 17f,
-): AnnotatedString = richClipboardDocument(MarkdownParser.parse(markdown), fontSizeSp)
+): AnnotatedString = richClipboardDocument(MarkdownParser.parse(markdown, LightTextoryColors), fontSizeSp)
 
 @Composable
 private fun MarkdownBlockView(
@@ -458,6 +461,7 @@ private fun RenderedText(
     fontSizeSp: Float,
     onChangeTapped: (TextChange) -> Unit,
 ) {
+    val highlightColor = TextoryPalette.GreenHighlight
     var layout by remember(block.stableKey) { mutableStateOf<TextLayoutResult?>(null) }
     val displayRanges = remember(highlights) { highlights.map(BlockHighlight::display) }
     val doubleTapTracker = remember(block.stableKey, highlights) { PassiveDoubleTapTracker() }
@@ -489,7 +493,7 @@ private fun RenderedText(
     val modifier = Modifier
         .fillMaxWidth()
         .drawBehind {
-            drawRoundedTextHighlights(layout, displayRanges, TextoryPalette.GreenHighlight)
+            drawRoundedTextHighlights(layout, displayRanges, highlightColor)
         }
         .observeTapWithoutConsuming(block.stableKey, highlights) { position ->
             resolveChangeAt(position)?.let(onChangeTapped)
@@ -532,7 +536,7 @@ private object MarkdownParser {
     private val bullet = Regex("^[-*+]\\s+(.*)$")
     private val divider = Regex("^(---+|___+|\\*\\*\\*+)$")
 
-    fun parse(markdown: String): List<MarkdownBlock> {
+    fun parse(markdown: String, colors: TextoryColors): List<MarkdownBlock> {
         val result = mutableListOf<MarkdownBlock>()
         var cursor = 0
         var id = 0
@@ -582,7 +586,7 @@ private object MarkdownParser {
                         val hashes = match.groupValues[1].length
                         val content = match.groupValues[2]
                         val contentStart = absolute + match.groups[2]!!.range.first
-                        fromInline(id++, cursor, lineEnd, headingKind(hashes), content, contentStart)
+                        fromInline(id++, cursor, lineEnd, headingKind(hashes), content, contentStart, colors = colors)
                     }
                     checkbox.matches(visible) -> {
                         val match = checkbox.matchEntire(visible)!!
@@ -592,7 +596,7 @@ private object MarkdownParser {
                         fromInline(
                             id++, cursor, lineEnd,
                             if (checked) MarkdownBlockKind.CHECKBOX_DONE else MarkdownBlockKind.CHECKBOX_OPEN,
-                            content, contentStart, if (checked) "☑" else "☐",
+                            content, contentStart, if (checked) "☑" else "☐", colors,
                         )
                     }
                     numbered.matches(visible) -> {
@@ -601,21 +605,21 @@ private object MarkdownParser {
                         val contentStart = absolute + match.groups[2]!!.range.first
                         fromInline(
                             id++, cursor, lineEnd, MarkdownBlockKind.NUMBERED,
-                            content, contentStart, match.groupValues[1],
+                            content, contentStart, match.groupValues[1], colors,
                         )
                     }
                     bullet.matches(visible) -> {
                         val match = bullet.matchEntire(visible)!!
                         val content = match.groupValues[1]
                         val contentStart = absolute + match.groups[1]!!.range.first
-                        fromInline(id++, cursor, lineEnd, MarkdownBlockKind.BULLET, content, contentStart, "•")
+                        fromInline(id++, cursor, lineEnd, MarkdownBlockKind.BULLET, content, contentStart, "•", colors)
                     }
                     visible.startsWith("> ") -> fromInline(
                         id++, cursor, lineEnd, MarkdownBlockKind.QUOTE,
-                        visible.removePrefix("> "), absolute + 2,
+                        visible.removePrefix("> "), absolute + 2, colors = colors,
                     )
                     else -> fromInline(
-                        id++, cursor, lineEnd, MarkdownBlockKind.PARAGRAPH, visible, absolute,
+                        id++, cursor, lineEnd, MarkdownBlockKind.PARAGRAPH, visible, absolute, colors = colors,
                     )
                 }
                 result += block
@@ -640,15 +644,20 @@ private object MarkdownParser {
         content: String,
         contentStart: Int,
         prefix: String? = null,
+        colors: TextoryColors,
     ): MarkdownBlock {
-        val inline = inlineMarkdown(content, contentStart)
+        val inline = inlineMarkdown(content, contentStart, colors)
         return MarkdownBlock(id, rawStart, rawEnd, kind, prefix, inline.first, inline.second)
     }
 
     private fun plainInline(content: String, contentStart: Int): Pair<AnnotatedString, IntArray> =
         AnnotatedString(content) to IntArray(content.length) { contentStart + it }
 
-    private fun inlineMarkdown(content: String, contentStart: Int): Pair<AnnotatedString, IntArray> {
+    private fun inlineMarkdown(
+        content: String,
+        contentStart: Int,
+        colors: TextoryColors,
+    ): Pair<AnnotatedString, IntArray> {
         val builder = AnnotatedString.Builder()
         val offsets = mutableListOf<Int>()
 
@@ -690,7 +699,7 @@ private object MarkdownParser {
                             close,
                             SpanStyle(
                                 fontFamily = FontFamily.Monospace,
-                                color = TextoryPalette.Green,
+                                color = colors.green,
                             ),
                         )
                         index = close + 1
@@ -707,7 +716,7 @@ private object MarkdownParser {
                             index + 1,
                             labelEnd,
                             SpanStyle(
-                                color = TextoryPalette.Green,
+                                color = colors.green,
                                 textDecoration = TextDecoration.Underline,
                             ),
                             url = content.substring(labelEnd + 2, linkEnd),
@@ -759,12 +768,13 @@ private val editorLinePrefix = Regex("(?m)^(?:[-*+] |\\d+[.)] |[-*] \\[[ xX]] |>
 private fun markdownEditorStyleRanges(
     source: String,
     baseFontSizeSp: Float,
+    colors: TextoryColors,
 ): List<EditorStyleRange> = buildList {
     editorHeading.findAll(source).forEach { match ->
         val level = match.groupValues[1].length
         add(
             EditorStyleRange(
-                SpanStyle(color = TextoryPalette.InkMuted, fontWeight = FontWeight.Medium),
+                SpanStyle(color = colors.inkMuted, fontWeight = FontWeight.Medium),
                 match.groups[1]!!.range.first,
                 match.groups[2]!!.range.last + 1,
             ),
@@ -789,7 +799,7 @@ private fun markdownEditorStyleRanges(
     editorCode.findAll(source).forEach { match ->
         add(
             EditorStyleRange(
-                SpanStyle(fontFamily = FontFamily.Monospace, color = TextoryPalette.Green),
+                SpanStyle(fontFamily = FontFamily.Monospace, color = colors.green),
                 match.groups[1]!!.range.first,
                 match.groups[1]!!.range.last + 1,
             ),
@@ -798,21 +808,21 @@ private fun markdownEditorStyleRanges(
     editorLink.findAll(source).forEach { match ->
         add(
             EditorStyleRange(
-                SpanStyle(color = TextoryPalette.Green, textDecoration = TextDecoration.Underline),
+                SpanStyle(color = colors.green, textDecoration = TextDecoration.Underline),
                 match.groups[1]!!.range.first,
                 match.groups[1]!!.range.last + 1,
             ),
         )
         add(
             EditorStyleRange(
-                SpanStyle(color = TextoryPalette.InkMuted),
+                SpanStyle(color = colors.inkMuted),
                 match.groups[2]!!.range.first,
                 match.groups[2]!!.range.last + 1,
             ),
         )
     }
     editorLinePrefix.findAll(source).forEach { match ->
-        add(EditorStyleRange(SpanStyle(color = TextoryPalette.Green), match.range.first, match.range.last + 1))
+        add(EditorStyleRange(SpanStyle(color = colors.green), match.range.first, match.range.last + 1))
     }
 }
 
@@ -826,14 +836,15 @@ internal fun editorHeadingFontSizeSp(baseFontSizeSp: Float, level: Int): Float =
 fun markdownEditorOutputTransformation(
     highlights: () -> List<DisplayHighlight>,
     fontSizeSp: () -> Float,
+    colors: TextoryColors = LightTextoryColors,
 ): OutputTransformation = OutputTransformation {
     val source = asCharSequence().toString()
-    markdownEditorStyleRanges(source, fontSizeSp()).forEach { range ->
+    markdownEditorStyleRanges(source, fontSizeSp(), colors).forEach { range ->
         if (range.start < range.end) addStyle(range.style, range.start, range.end)
     }
     highlights().forEach { highlight ->
         val start = highlight.start.coerceIn(0, source.length)
         val end = highlight.end.coerceIn(start, source.length)
-        if (start < end) addStyle(SpanStyle(background = TextoryPalette.GreenHighlight), start, end)
+        if (start < end) addStyle(SpanStyle(background = colors.greenHighlight), start, end)
     }
 }

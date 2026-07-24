@@ -518,10 +518,12 @@ private fun EditorBody(
     }
     val currentHighlightRanges = rememberUpdatedState(highlightRanges)
     val currentEditorFontSizeSp = rememberUpdatedState(editorFontSizeSp)
-    val outputTransformation = remember {
+    val palette = TextoryPalette.current
+    val outputTransformation = remember(palette) {
         markdownEditorOutputTransformation(
             highlights = { currentHighlightRanges.value },
             fontSizeSp = { currentEditorFontSizeSp.value },
+            colors = palette,
         )
     }
     val latestOnValueChange by rememberUpdatedState(onValueChange)
@@ -875,6 +877,7 @@ private fun EditorHistoryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val green = TextoryPalette.Green
     Surface(
         color = TextoryPalette.GreenBlock,
         shape = CircleShape,
@@ -897,35 +900,35 @@ private fun EditorHistoryButton(
                 val strokeWidth = 2.5.dp.toPx()
                 val right = size.width - inset
                 drawLine(
-                    color = TextoryPalette.Green,
+                    color = green,
                     start = Offset(inset, centerY),
                     end = Offset(right, centerY),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = TextoryPalette.Green,
+                    color = green,
                     start = Offset(inset, centerY),
                     end = Offset(inset + wing, centerY - wing),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = TextoryPalette.Green,
+                    color = green,
                     start = Offset(inset, centerY),
                     end = Offset(inset + wing, centerY + wing),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = TextoryPalette.Green,
+                    color = green,
                     start = Offset(right, centerY),
                     end = Offset(right - wing, centerY - wing),
                     strokeWidth = strokeWidth,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = TextoryPalette.Green,
+                    color = green,
                     start = Offset(right, centerY),
                     end = Offset(right - wing, centerY + wing),
                     strokeWidth = strokeWidth,

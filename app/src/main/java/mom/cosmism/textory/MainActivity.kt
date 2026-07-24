@@ -9,12 +9,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mom.cosmism.textory.data.AppTheme
+import mom.cosmism.textory.data.AppThemePreferences
 import mom.cosmism.textory.ui.TextoryApp
 import mom.cosmism.textory.ui.theme.TextoryTheme
 import java.io.ByteArrayOutputStream
@@ -42,13 +49,27 @@ class MainActivity : ComponentActivity() {
             val catalog by viewModel.projectCatalog.collectAsStateWithLifecycle()
             val versionHistory by viewModel.versionHistory.collectAsStateWithLifecycle()
             val updateState by updateViewModel.state.collectAsStateWithLifecycle()
-            TextoryTheme {
+            val themePreferences = remember { AppThemePreferences(applicationContext) }
+            var appTheme by remember { mutableStateOf(themePreferences.load()) }
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    val lightSystemBars = appTheme == AppTheme.LIGHT
+                    isAppearanceLightStatusBars = lightSystemBars
+                    isAppearanceLightNavigationBars = lightSystemBars
+                }
+            }
+            TextoryTheme(theme = appTheme) {
                 TextoryApp(
                     state = state,
                     editorFontSizeSp = editorFontSizeSp,
                     catalog = catalog,
                     versionHistory = versionHistory,
                     updateState = updateState,
+                    appTheme = appTheme,
+                    onAppThemeChanged = { theme ->
+                        appTheme = theme
+                        themePreferences.save(theme)
+                    },
                     onOpenProject = viewModel::openProject,
                     onTextChanged = viewModel::onTextChanged,
                     onEditorFontSizeChanged = viewModel::setEditorFontSizeSp,

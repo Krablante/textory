@@ -12,6 +12,7 @@ import mom.cosmism.textory.EditorUiState
 import mom.cosmism.textory.ProjectCatalogUiState
 import mom.cosmism.textory.UpdateUiState
 import mom.cosmism.textory.VersionHistoryUiState
+import mom.cosmism.textory.data.AppTheme
 
 private enum class AppDestination { HOME, EDITOR, VERSIONS }
 
@@ -22,6 +23,8 @@ internal fun TextoryApp(
     catalog: ProjectCatalogUiState,
     versionHistory: VersionHistoryUiState,
     updateState: UpdateUiState,
+    appTheme: AppTheme,
+    onAppThemeChanged: (AppTheme) -> Unit,
     onOpenProject: (String) -> Unit,
     onTextChanged: (String) -> Unit,
     onEditorFontSizeChanged: (Float) -> Unit,
@@ -86,6 +89,8 @@ internal fun TextoryApp(
         AppDestination.HOME -> HomeScreen(
             catalog = catalog,
             updateState = updateState,
+            appTheme = appTheme,
+            onAppThemeChanged = onAppThemeChanged,
             onOpenProject = { id -> openProject(id, AppDestination.EDITOR) },
             onNewProject = {
                 waitForProject(AppDestination.EDITOR, editMode = true, action = onNewProject)
