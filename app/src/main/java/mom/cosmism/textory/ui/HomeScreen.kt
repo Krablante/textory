@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -28,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,9 +38,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +61,7 @@ internal fun HomeScreen(
     appTheme: AppTheme,
     onAppThemeChanged: (AppTheme) -> Unit,
     onOpenProject: (String) -> Unit,
-    onNewProject: () -> Unit,
+    onNewProject: (String) -> Unit,
     onImportDocument: () -> Unit,
     onOpenVersions: (String) -> Unit,
     onRenameProject: (String, String) -> Unit,
@@ -65,6 +71,9 @@ internal fun HomeScreen(
 ) {
     var appMenuExpanded by remember { mutableStateOf(false) }
     var settingsOpen by remember { mutableStateOf(false) }
+    var newProjectDialogOpen by remember { mutableStateOf(false) }
+    var newProjectName by remember { mutableStateOf("") }
+    val newProjectFocusRequester = remember { FocusRequester() }
     var renameTarget by remember { mutableStateOf<ProjectSummary?>(null) }
     var renameValue by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<ProjectSummary?>(null) }
@@ -215,7 +224,10 @@ internal fun HomeScreen(
                 HomeAction(
                     text = "Новый документ",
                     primary = true,
-                    onClick = onNewProject,
+                    onClick = {
+                        newProjectName = ""
+                        newProjectDialogOpen = true
+                    },
                     modifier = Modifier.weight(1f),
                 )
                 HomeAction(
@@ -226,6 +238,45 @@ internal fun HomeScreen(
                 )
             }
         }
+    }
+
+    if (newProjectDialogOpen) {
+        fun createProject() {
+            newProjectDialogOpen = false
+            onNewProject(newProjectName)
+        }
+
+        LaunchedEffect(Unit) {
+            newProjectFocusRequester.requestFocus()
+        }
+        AlertDialog(
+            onDismissRequest = { newProjectDialogOpen = false },
+            title = { Text("Новый документ") },
+            text = {
+                OutlinedTextField(
+                    value = newProjectName,
+                    onValueChange = { newProjectName = it },
+                    label = { Text("Название") },
+                    placeholder = { Text("Без названия") },
+                    supportingText = {
+                        Text("Можно оставить пустым — расширение .md добавится автоматически.")
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { createProject() }),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(newProjectFocusRequester),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { createProject() }) { Text("Создать") }
+            },
+            dismissButton = {
+                TextButton(onClick = { newProjectDialogOpen = false }) { Text("Отмена") }
+            },
+            containerColor = TextoryPalette.Surface,
+        )
     }
 
     if (settingsOpen) {

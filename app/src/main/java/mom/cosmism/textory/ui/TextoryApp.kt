@@ -30,7 +30,7 @@ internal fun TextoryApp(
     onEditorFontSizeChanged: (Float) -> Unit,
     onSave: () -> Unit,
     onExportDocument: () -> Unit,
-    onNewProject: () -> Unit,
+    onNewProject: (String) -> Unit,
     onImportDocument: () -> Unit,
     onRenameProject: (String, String) -> Unit,
     onDeleteProject: (String) -> Unit,
@@ -92,8 +92,8 @@ internal fun TextoryApp(
             appTheme = appTheme,
             onAppThemeChanged = onAppThemeChanged,
             onOpenProject = { id -> openProject(id, AppDestination.EDITOR) },
-            onNewProject = {
-                waitForProject(AppDestination.EDITOR, editMode = true, action = onNewProject)
+            onNewProject = { name ->
+                waitForProject(AppDestination.EDITOR, editMode = true) { onNewProject(name) }
             },
             onImportDocument = {
                 waitForProject(AppDestination.EDITOR, editMode = false, action = onImportDocument)

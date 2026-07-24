@@ -115,12 +115,12 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
         appearancePreferences.writeFontSizeSp(normalized)
     }
 
-    fun newDocument() {
+    fun newDocument(fileName: String) {
         flushActiveDraft()
         _uiState.value = _uiState.value.copy(isProjectLoading = true)
         viewModelScope.launch {
             val document = withContext(Dispatchers.IO) {
-                repository.createProject(fileName = DocumentRepository.DEFAULT_FILE_NAME)
+                repository.createProject(fileName = fileName)
             }
             activateDocument(document, versions = emptyList())
             refreshProjectCatalog()
