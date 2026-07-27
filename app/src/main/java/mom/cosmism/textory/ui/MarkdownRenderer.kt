@@ -66,6 +66,7 @@ import mom.cosmism.textory.ui.theme.TextoryColors
 import mom.cosmism.textory.ui.theme.TextoryPalette
 
 internal const val RICH_TEXT_URL_TAG = "textory-url"
+private const val EDITOR_DIFF_HIGHLIGHT_ALPHA = 0.55f
 
 private enum class MarkdownBlockKind {
     PARAGRAPH,
@@ -842,9 +843,12 @@ fun markdownEditorOutputTransformation(
     markdownEditorStyleRanges(source, fontSizeSp(), colors).forEach { range ->
         if (range.start < range.end) addStyle(range.style, range.start, range.end)
     }
+    val highlightStyle = SpanStyle(
+        background = colors.greenHighlight.copy(alpha = EDITOR_DIFF_HIGHLIGHT_ALPHA),
+    )
     highlights().forEach { highlight ->
         val start = highlight.start.coerceIn(0, source.length)
         val end = highlight.end.coerceIn(start, source.length)
-        if (start < end) addStyle(SpanStyle(background = colors.greenHighlight), start, end)
+        if (start < end) addStyle(highlightStyle, start, end)
     }
 }
